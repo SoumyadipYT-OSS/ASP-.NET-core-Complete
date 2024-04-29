@@ -1,0 +1,10 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "task-bin",
+      "appliesTo": "01_intro/bin/",
+      "type": "launch"
+    }
+  ]
+}
