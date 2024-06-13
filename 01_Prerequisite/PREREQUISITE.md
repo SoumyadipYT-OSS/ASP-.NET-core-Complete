@@ -31,7 +31,7 @@ info: Microsoft.Hosting.Lifetime[0]
 
 Open a browser and go to the URL shown in the output. In this example, the URL is http://localhost:5109.
 
-<img width="200" height="120" src="https://learn.microsoft.com/en-us/aspnet/core/getting-started/_static/home-page.png?view=aspnetcore-8.0">
+<img width="400" height="240" src="https://learn.microsoft.com/en-us/aspnet/core/getting-started/_static/home-page.png?view=aspnetcore-8.0">
 
 
 **Edit a Razor page**
@@ -58,4 +58,4 @@ _CSHTML_
 
 • In the browser, refresh the page and verify the changes are displayed.
 
-<img width="200" height="120" src="https://learn.microsoft.com/en-us/aspnet/core/getting-started/_static/home-page-changed.png?view=aspnetcore-8.0">
+<img width="400" height="240" src="https://learn.microsoft.com/en-us/aspnet/core/getting-started/_static/home-page-changed.png?view=aspnetcore-8.0">
