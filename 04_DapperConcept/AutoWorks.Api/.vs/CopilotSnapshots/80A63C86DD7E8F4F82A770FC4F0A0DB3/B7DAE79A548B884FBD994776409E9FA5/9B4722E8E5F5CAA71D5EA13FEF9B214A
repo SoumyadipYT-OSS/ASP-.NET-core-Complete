@@ -1,0 +1,130 @@
+﻿
+using AutoWorks.Api.Metadata;
+using Dapper;
+using System.Data; 
+
+namespace AutoWorks.Api.Services; 
+
+    
+public class DynamicCrudService 
+{
+    private readonly IDbConnection _db;
+
+    private static readonly Dictionary<string, TableMeta> Meta =
+        new(StringComparer.OrdinalIgnoreCase) 
+        {
+            ["Manufacturers"] = new TableMeta 
+            {
+                TableName = "Manufacturers", 
+                KeyColumn = "ManufacturerId", 
+                Columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "CompanyName", "Country" }
+            },
+            ["VehicleModels"] = new TableMeta 
+            {
+                TableName = "VehicleModels", 
+                KeyColumn = "ModelId", 
+                Columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "ManufacturerId", "ModelName", "Segment" }
+            }, 
+            ["Vehicles"] = new TableMeta 
+            {
+                TableName = "Vehicles", 
+                KeyColumn = "VehicleId", 
+                Columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "ModelId", "Vin", "MfgYear", "Price", "Status" }
+            }
+        };
+
+
+    public DynamicCrudService(IDbConnection db) => _db = db;
+
+
+    private static TableMeta GetMetaOrThrow(string table)
+        => Meta.TryGetValue(table, out var meta) ? meta : throw new ArgumentException("Unknown table (not allowed).");
+
+
+
+    public async Task<IEnumerable<dynamic>> GetAllAsync(string table, int page = 1, int pageSize = 50) 
+    {
+        var meta = GetMetaOrThrow(table);
+
+        var sql = $"""
+            SELECT * FROM [{meta.TableName}] 
+                ORDER BY [{meta.KeyColumn}] DESC 
+                OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+            """;
+
+        return await _db.QueryAsync(sql, new { offset = (page - 1) * pageSize, pageSize });
+    } 
+
+
+    public async Task<dynamic?> GetByIdAsync(string table, int id) 
+    {
+        var meta = GetMetaOrThrow(table);
+
+        var sql = $"""
+            SELECT * FROM [{meta.TableName}] 
+                WHERE [{meta.KeyColumn}] = @id;
+            """;
+
+        return await _db.QueryFirstOrDefaultAsync(sql, new { id });
+    } 
+
+
+    public async Task<int> InsertAsync(string table, Dictionary<string, object?> data) 
+    {
+        var meta = GetMetaOrThrow(table);
+
+        var cols = data.Keys.Where(k => meta.Columns.Contains(k)).ToList();
+        if (cols.Count == 0)
+            throw new ArgumentException("No allowd columns provided.");
+
+        var colList = string.Join(", ", cols.Select(c => $"[{c}]"));
+        var paramList = string.Join(", ", cols.Select(c => $"@{c}"));
+
+        var sql = $"""
+            INSERT INTO [{meta.TableName}] ({colList}) 
+            OUPUT INSERTED.[{meta.KeyColumn}] 
+            VALUES ({paramList});
+            """;
+
+        return await _db.ExecuteScalarAsync<int>(sql, data);
+    } 
+
+
+    public async Task<bool> UpdateAsync(string table, int id, Dictionary<string, object?> data) 
+    {
+        var meta = GetMetaOrThrow(table);
+
+        var cols = data.Keys.Where(k => meta.Columns.Contains(k)).ToList();
+        if (cols.Count == 0)
+            throw new ArgumentException("No allowed columns provided.");
+
+        var setList = string.Join(", ", cols.Select(c => $"[{c}] = @{c}"));
+
+        var sql = $"""
+            UPDATE [{meta.TableName}] 
+            SET {setList} 
+            WHERE [{meta.KeyColumn}] = @id;
+            """;
+
+        data["id"] = id;
+
+        var rows = await _db.ExecuteAsync(sql, data);
+
+        return rows > 0; 
+    } 
+
+
+    public async Task<bool> DeleteAsync(string table, int id) 
+    {
+        var meta = GetMetaOrThrow(table);
+
+        var sql = $"""
+            DELETE FROM [{meta.TableName}] 
+                WHERE [{meta.KeyColumn}] = @id;
+            """;
+
+        var rows = await _db.ExecuteAsync(sql, new { id });
+
+        return rows > 0;
+    }
+}

@@ -1,0 +1,10 @@
+USE AutoWorksDb 
+GO 
+
+
+CREATE TABLE Manufacturers (
+	ManufacturerId	INT	IDENTITY(1,1) PRIMARY KEY, 
+	CompanyName	NVARCHAR(100) NOT NULL, 
+	Country NVARCHAR(80) NULL, 
+	CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);

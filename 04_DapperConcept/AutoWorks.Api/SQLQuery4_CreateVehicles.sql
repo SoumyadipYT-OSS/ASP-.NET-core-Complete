@@ -1,0 +1,18 @@
+USE AutoWorksDb
+GO 
+
+
+CREATE TABLE Vehicles(
+	VehicleId INT IDENTITY(1,1) PRIMARY KEY, 
+	ModelId INT NOT NULL, 
+	Vin NVARCHAR(17) NOT NULL UNIQUE, 
+	Color NVARCHAR(30) NULL, 
+	MfgYear INT NOT NULL, 
+	Price DECIMAL(18,2) NOT NULL, 
+	Status NVARCHAR(30) NOT NULL DEFAULT 'InStock', -- e.g.: InStock/Sold/Service 
+	CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), 
+
+	CONSTRAINT FK_Vehicles_VehicleModel 
+		FOREIGN KEY (ModelId) REFERENCES VehicleModel(ModelId) 
+); 
+GO 
